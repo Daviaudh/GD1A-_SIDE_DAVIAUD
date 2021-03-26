@@ -50,7 +50,10 @@ function preload ()
     this.load.image('ground', 'assets/platform1.png');
     this.load.image('star', 'assets/star.png');
     this.load.image('bomb', 'assets/Meteorite1.png');
+    this.load.image('ville', 'assets/Ville.png');
+    this.load.image('rapidFire', 'assets/rapidFire.png');
     this.load.spritesheet('dude', 'assets/SpriteSheet_Vaisseau.png', { frameWidth: 62, frameHeight: 33 });
+    
     this.iter = 3.14;
 }
 
@@ -66,15 +69,14 @@ function create ()
 
     //  Here we create the ground.
     //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-    platforms.create(700, 1000, 'ground');
-
+    platforms.create(1280, 1300, 'sol').setScale(2).refreshBody();
     //  Now let's create some ledges
     platforms.create(600, 500, 'ground');
-    platforms.create(2000, 1000, 'ground');
+    platforms.create(1800, 1000, 'ground');
     platforms.create(50, 250, 'ground');
     platforms.create(2000, 500, 'ground');
     platforms.create(2300, 250, 'ground');
-    platforms.create(1280, 1300, 'sol').setScale(2).refreshBody();
+    platforms.create(700, 1000, 'ground');
 
     // The player and its settings
     player = this.physics.add.sprite(100, 450, 'dude');
