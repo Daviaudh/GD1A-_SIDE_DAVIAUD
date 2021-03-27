@@ -32,11 +32,12 @@ var config = {
     }
 };
 
+
 var groupeLaser;
 var boutonFeu; 
 var player;
 var stars;
-var bombs;
+var meteorite;
 var platforms;
 var cursors;
 var score = 0;
@@ -48,16 +49,17 @@ var game = new Phaser.Game(config);
 function preload ()
 {
     
-    this.load.image('sky', 'assets/FondV2.jpg');
+    this.load.image('fond', 'assets/FondV2.jpg');
     this.load.image('sol', 'assets/Sol.png');
     this.load.image('ground', 'assets/platform1.png');
     this.load.image('star', 'assets/cellule.png');
-    this.load.image('bomb', 'assets/Meteorite1.png');
-    this.load.image('ville', 'assets/Ville.png');
-    this.load.image('rapidFire', 'assets/rapidFire.png');
-    this.load.spritesheet('dude', 'assets/SpriteSheet_Vaisseau.png', { frameWidth: 62, frameHeight: 33 });
     this.load.image('laser', 'assets/laser.png');
-    
+    this.load.image('ville', 'assets/Ville.png');
+    this.load.image('gameOver', 'assets/GameOver.png');
+    this.load.image('rapidFire', 'assets/rapidFire.png');
+    this.load.spritesheet('vaisseau', 'assets/SpriteSheet_Vaisseau.png', { frameWidth: 62, frameHeight: 33 });
+    this.load.spritesheet('meteorite', 'assets/SpriteSheetMeteorite.png', { frameWidth: 71, frameHeight: 72 });
+        
     this.iter = 3.14;
 }
 
@@ -67,7 +69,7 @@ function create ()
     groupeLaser = this.physics.add.group();
    
     //  A simple background for our game
-    this.add.image(1280, 720, 'sky');
+    this.add.image(1280, 720, 'fond');
 
     //  The platforms group contains the ground and the 2 ledges we can jump on
     platforms = this.physics.add.staticGroup();
@@ -84,7 +86,7 @@ function create ()
     platforms.create(700, 1000, 'ground');
 
     // The player and its settings
-    player = this.physics.add.sprite(100, 450, 'dude');
+    player = this.physics.add.sprite(100, 450, 'vaisseau');
 
     //  Player physics properties. Give the little guy a slight bounce.
     player.direction='right';
@@ -94,30 +96,45 @@ function create ()
     //  Our player animations, turning, walking left and walking right.
     this.anims.create({
         key: 'left',
-        frames: this.anims.generateFrameNumbers('dude', { start: 15, end: 19 }),
+        frames: this.anims.generateFrameNumbers('vaisseau', { start: 15, end: 19 }),
         frameRate: 10,
      
     });
 
     this.anims.create({
         key: 'turn',
-        frames: [ { key: 'dude', frame: 2 } ],
+        frames: [ { key: 'vaisseau', frame: 2 } ],
         frameRate: 20
     });
 
     this.anims.create({
         key: 'right',
-        frames: this.anims.generateFrameNumbers('dude', { start: 10, end: 14 }),
+        frames: this.anims.generateFrameNumbers('vaisseau', { start: 10, end: 14 }),
         frameRate: 10,
       
     });
     
     this.anims.create({
         key: 'up',
-        frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 9 }),
+        frames: this.anims.generateFrameNumbers('vaisseau', { start: 5, end: 9 }),
         duration: 600,
       
     });
+    
+    this.anims.create({
+        key: 'meteoriteIntact',
+        frames: [ { key: 'meteorite', frame: 0 } ],
+        frameRate: 10,
+     
+    });
+    
+      this.anims.create({
+        key: 'meteoriteCasse',
+        frames: this.anims.generateFrameNumbers('meteorite', { start: 0, end: 2 }),
+        frameRate: 5,
+        repeat: 0,
+    });
+    
 
     //  Input Events
     cursors = this.input.keyboard.createCursorKeys();
@@ -135,7 +152,7 @@ function create ()
 
     });
 
-    bombs = this.physics.add.group();
+    meteorites = this.physics.add.group();
     
     ville = this.physics.add.group();
     ville1 = ville.create(1800, 800, 'ville');
@@ -143,20 +160,22 @@ function create ()
     ville3 = ville.create(2300, 250, 'ville');
     ville4 = ville.create(700, 1000, 'ville');
     this.physics.add.collider(ville, platforms);
-    //this.physics.add.overlap(laser, meteorite);
-   
+    this.physics.add.overlap(groupeLaser, meteorites, hitMeteorite, null, this);
+    this.physics.add.overlap(ville, meteorites, hitVille, null, this);
+    //this.physics.add.overlap(ville, groupeLaser, hitVille, null, this);
+    
     //  The score
     scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
 
     //  Collide the player and the stars with the platforms
     this.physics.add.collider(player, platforms);
     this.physics.add.collider(stars, platforms);
-    this.physics.add.collider(bombs, platforms);
+    this.physics.add.collider(meteorites, platforms);
 
     //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
     this.physics.add.overlap(player, stars, collectStar, null, this);
 
-    this.physics.add.collider(player, bombs, hitBomb, null, this);
+    this.physics.add.collider(player, meteorites, hitBomb, null, this);
     
     this.cameras.main.setBounds(0, 0, 2560, 1440);
     this.cameras.main.setSize(1920, 1080);
@@ -203,17 +222,22 @@ function update ()
     if ( Phaser.Input.Keyboard.JustDown(boutonFeu)) {
         tirer(player);
     }
+    //si il n'y a plus de villes, Game Over
+    if(ville.countActive(true)===0){
+        this.add.image(960, 540, 'gameOver').setScrollFactor(0);
+    }
 }
     
     function tirer(player) {
         var coefDir;
 	    if (player.direction == 'left') { coefDir = -1; } else { coefDir = 1 }
         // on crée la balle a coté du joueur
-        var bullet = groupeLaser.create(player.x + (25 * coefDir), player.y - 4, 'laser');
+        var laser = groupeLaser.create(player.x + (25 * coefDir), player.y - 4, 'laser');
         // parametres physiques de la balle.
-        bullet.setCollideWorldBounds(false);
-        bullet.body.allowGravity =false;
-        bullet.setVelocity(1000 * coefDir, 0); // vitesse en x et en y
+        laser.setCollideWorldBounds(false);
+        laser.body.allowGravity =false;
+        laser.setVelocity(1000 * coefDir, 0); // vitesse en x et en y
+    
 }
 
 function collectStar (player, star)
@@ -235,14 +259,34 @@ function collectStar (player, star)
 
         var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
 
-        var bomb = bombs.create(x, 16, 'bomb');
-        bomb.setBounce(1);
-        bomb.setCollideWorldBounds(true);
-        bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
-        bomb.allowGravity = false;
-
+        var meteorite = meteorites.create(x, 16, 'meteorite');
+        meteorite.setBounce(1);
+        meteorite.setCollideWorldBounds(true);
+        meteorite.setVelocity(Phaser.Math.Between(-200, 200), 20);
+        meteorite.allowGravity = false;
     }
 }
+
+function hitMeteorite(laser, meteorites) {
+    meteorites.anims.play('meteoriteCasse', true);
+   this.time.addEvent({
+    delay: 800,
+    callback: ()=>{
+       meteorites.destroy();
+    }})
+    
+} 
+   
+    function hitVille(ville, meteorites) {
+        meteorites.anims.play('meteoriteCasse', true);
+        ville.destroy();
+        this.time.addEvent({
+            delay: 800,
+            callback: ()=>{
+            meteorites.destroy();
+        }})
+} 
+
 
 function hitBomb (player, bomb)
 {
