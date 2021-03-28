@@ -32,7 +32,7 @@ var config = {
     }
 };
 
-
+var createMeteorite = true;
 var groupeLaser;
 var boutonFeu; 
 var player;
@@ -185,6 +185,14 @@ function create ()
 
 function update ()
 {
+    scoreText.setText('Score: ' + createMeteorite);
+    
+   /* if (createMeteorite == true ){
+        createMeteorite = false;
+        spawnMeteorite(this);
+    }*/
+    
+    
     if (gameOver)
     {
         return;
@@ -226,6 +234,8 @@ function update ()
     if(ville.countActive(true)===0){
         this.add.image(960, 540, 'gameOver').setScrollFactor(0);
     }
+    
+    
 }
     
     function tirer(player) {
@@ -280,13 +290,28 @@ function hitMeteorite(laser, meteorites) {
     function hitVille(ville, meteorites) {
         meteorites.anims.play('meteoriteCasse', true);
         ville.destroy();
-        this.time.addEvent({
+            this.time.addEvent({
             delay: 800,
             callback: ()=>{
             meteorites.destroy();
-        }})
+            }  
+        })
 } 
 
+/*function spawnMeteorite(test){
+   this.time.addEvent({
+            delay: 800,
+            callback: function(){createMeteorite = true;}
+    })
+    
+    var x = Phaser.Math.Between(100, 2460);
+
+    var meteorite = meteorites.create(x, 16, 'meteorite');
+    meteorite.setBounce(1);
+    meteorite.setCollideWorldBounds(true);
+    meteorite.setVelocity(Phaser.Math.Between(-200, 200), 20);
+    meteorite.allowGravity = false;
+}*/
 
 function hitBomb (player, bomb)
 {
