@@ -25,13 +25,15 @@ var config = {
             debug: true
         }
     },
+    input:{gamepad: true},
     scene: {
         preload: preload,
         create: create,
         update: update
     }
 };
-
+var xAxis=0;
+var yAxis=0;
 var createMeteorite = true;
 var groupeLaser;
 var boutonFeu; 
@@ -192,6 +194,13 @@ function update ()
         spawnMeteorite(this);
     }*/
     
+    let pad = Phaser.Input.Gamepad.Gamepad;
+
+    if(this.input.gamepad.total){
+        pad = this.input.gamepad.getPad(0)
+        xAxis = pad ? pad.axes[0].getValue() : 0;
+        yAxis = pad ? pad.axes[1].getValue() : 0;
+    }
     
     if (gameOver)
     {
